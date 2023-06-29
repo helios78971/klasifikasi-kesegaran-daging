@@ -26,10 +26,6 @@ def add_bg_from_local(image_file):
     [data-testid="stHeader"]{{
         background-color: rgba(0,0,0,0);}}
     
-    .stTabs [class="st-c7"] {{
-        background-color: teal;
-    }}
-    
     footer {{visibility: hidden;}}
     </style>
     """,
@@ -39,23 +35,27 @@ def add_bg_from_local(image_file):
 def main():
     add_bg_from_local('assets/kyle-mackie-Xedxbjx7MFg-unsplash.jpg')
     st.title("Klasifikasi Kesegaran Daging Sapi")
-
     st.subheader("Metode")
-    tab1, tab2 = st.tabs(["Upload", "Kamera"])
-
-    with tab1:
+    input_source  = st.radio('test', ('Upload', 'Kamera'), label_visibility="collapsed")
+    
+    if input_source == "Upload":
+        st.subheader("Upload Gambar")
         uploaded_file = st.file_uploader("Upload gambar", type=["jpg", "png", "jpeg"], accept_multiple_files=False, label_visibility='collapsed')
+
         
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.subheader("Gambar Input")
-            if uploaded_file:
-                display = Image.open(uploaded_file)
-                st.image(display)
-
-            if st.button("Prediksi", key=1):
-                if uploaded_file is not None:
+        with st.container():
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Gambar Input")
+                if uploaded_file:
+                    display = Image.open(uploaded_file)
+                    st.image(display)
+                tombol1 = st.button("Prediksi", key=1)
+            
+            with col2:
+                st.subheader("Prediksi")
+                if tombol1:
                     # Preprocess gambar untuk uji model
                     img_path = uploaded_file
                     img = image.load_img(img_path, target_size=input_size[:2])
@@ -85,53 +85,50 @@ def main():
 
                     predicted_accuracy = predicted_probability * 100
 
-                    with col2:
-                        st.subheader("Prediksi")    
-                        st.write(f"<h3>{predicted_class_name}</h3>", unsafe_allow_html=True)
-                        st.write("<h1>{:.2f}%</h1>".format(predicted_accuracy), unsafe_allow_html=True)
+                    st.subheader(f"{predicted_class_name}: {{:.0f}}%".format(predicted_accuracy))
     
-        with tab2:
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("Ambil Gambar")
-                if 'Gambar' not in st.session_state.keys():
-                    st.session_state['Gambar'] = None
+    if input_source == "Kamera":
+        col1, col2 = st.columns(2)
 
-                captured_image = st.camera_input("Test", label_visibility='collapsed')
+        st.subheader("Ambil Gambar")
+        if 'Gambar' not in st.session_state.keys():
+            st.session_state['Gambar'] = None
 
-            with col2:
-                if captured_image is not None:
-                    img = Image.open(captured_image)
-                    img = img.resize(input_size[:2])
-                    img_array = image.img_to_array(img)
-                    img_array = np.expand_dims(img_array, axis=0)
-                    img_array = img_array / 255.0
+        captured_image = st.camera_input("Test", label_visibility='collapsed')
+        
+        st.subheader("Prediksi")
 
-                    # Mendefinisikan tf.function untuk prediksi agar performa baik
-                    @tf.function
-                    def predict(image_array):
-                        return model(image_array)
+        if captured_image is not None:
+            img = Image.open(captured_image)
+            img = img.resize(input_size[:2])
+            img_array = image.img_to_array(img)
+            img_array = np.expand_dims(img_array, axis=0)
+            img_array = img_array / 255.0
 
-                    # Buat prediksi dari gambar
-                    predictions = predict(tf.convert_to_tensor(img_array))
+            # Mendefinisikan tf.function untuk prediksi agar performa baik
+            @tf.function
+            def predict(image_array):
+                return model(image_array)
 
-                    # Ambil indeks hasil prediksi
-                    predicted_class_index = np.argmax(predictions)
+            # Buat prediksi dari gambar
+            predictions = predict(tf.convert_to_tensor(img_array))
 
-                    # Nama kelas
-                    class_names = ['Busuk', 'Segar', 'Setengah Segar']
+            # Ambil indeks hasil prediksi
+            predicted_class_index = np.argmax(predictions)
 
-                    # Ambil kelas berdasarkan indeks
-                    predicted_class_name = class_names[predicted_class_index]
+            # Nama kelas
+            class_names = ['Busuk', 'Segar', 'Setengah Segar']
 
-                    # Ambil probabilitas untuk kelas hasil prediksi
-                    predicted_probability = predictions[0][predicted_class_index]
+            # Ambil kelas berdasarkan indeks
+            predicted_class_name = class_names[predicted_class_index]
 
-                    predicted_accuracy = predicted_probability * 100
+            # Ambil probabilitas untuk kelas hasil prediksi
+            predicted_probability = predictions[0][predicted_class_index]
 
-                    st.subheader("Prediksi")
-                    st.write(f"<h3>{predicted_class_name}</h3>", unsafe_allow_html=True)
-                    st.write("<h1>{:.2f}%</h1>".format(predicted_accuracy), unsafe_allow_html=True)
+            predicted_accuracy = predicted_probability * 100
+
+            st.subheader(f"{predicted_class_name}: {{:.0f}}%".format(predicted_accuracy))
 
 if __name__ == '__main__':
+    st.set_page_config(page_title="Klasifikasi Daging", page_icon="🥩", layout="centered")
     main()
