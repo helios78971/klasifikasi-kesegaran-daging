@@ -7,7 +7,7 @@ from PIL import Image
 import base64
 
 # Siapkan model
-model = load_model('model\model_resnet.h5')
+model = load_model('model/model_resnet.h5')
 
 # Ukuran gambar
 input_size=(128, 128, 3)
@@ -37,7 +37,7 @@ def add_bg_from_local(image_file):
     )
 
 def main():
-    add_bg_from_local('assets\kyle-mackie-Xedxbjx7MFg-unsplash.jpg')
+    add_bg_from_local('assets/kyle-mackie-Xedxbjx7MFg-unsplash.jpg')
     st.title("Klasifikasi Kesegaran Daging Sapi")
 
     st.subheader("Metode")
